@@ -25,7 +25,6 @@ from subscriptions.tests.factories import (
     SubscriptionTypeCategoryFactory,
     SubscriptionTypeFactory,
 )
-from youths.tests.factories import YouthProfileFactory
 
 from ..schema import ProfileNode
 from .factories import (
@@ -2509,7 +2508,6 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client, group, service):
     profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
     phone = PhoneFactory(profile=profile)
     address = AddressFactory(profile=profile)
-    YouthProfileFactory(profile=profile)
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -2549,9 +2547,6 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client, group, service):
                             phone: \"${phone}\",
                         }],
                         removeAddresses: [\"${address_id}\"],
-                        youthProfile: {
-                            schoolClass: \"${school_class}\"
-                        },
                         sensitivedata: {
                             ssn: \"${ssn}\"
                         }
@@ -2581,9 +2576,6 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client, group, service):
                             }
                         }
                     }
-                    youthProfile {
-                        schoolClass
-                    }
                     sensitivedata {
                         ssn
                     }
@@ -2602,7 +2594,6 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client, group, service):
         primary=str(data["email"]["primary"]).lower(),
         phone=data["phone"],
         address_id=to_global_id(type="AddressNode", id=address.pk),
-        school_class=data["school_class"],
         ssn=data["ssn"],
     )
     expected_data = {
@@ -2617,7 +2608,6 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client, group, service):
                 },
                 "phones": {"edges": [{"node": {"phone": data["phone"]}}]},
                 "addresses": {"edges": []},
-                "youthProfile": {"schoolClass": data["school_class"]},
                 "sensitivedata": {"ssn": data["ssn"]},
             }
         }
