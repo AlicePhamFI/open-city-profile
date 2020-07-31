@@ -12,7 +12,6 @@ from open_city_profile.consts import (
     PERMISSION_DENIED_ERROR,
 )
 from open_city_profile.tests.factories import GroupFactory
-from profiles.models import Profile
 from profiles.tests.factories import EmailFactory, ProfileWithPrimaryEmailFactory
 from services.enums import ServiceType
 from youths.consts import (
@@ -1326,53 +1325,6 @@ def test_normal_user_cannot_use_create_youth_profile_mutation(
     assert (
         executed["errors"][0].get("extensions").get("code") == PERMISSION_DENIED_ERROR
     )
-
-
-def test_nested_youth_profile_create_failure_also_fails_profile_creation(
-    rf, user_gql_client, group, service
-):
-    user = user_gql_client.user
-    user.groups.add(group)
-    assign_perm("can_manage_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-
-    t = Template(
-        """
-        mutation {
-            createProfile(
-                input: {
-                    serviceType: ${service_type},
-                    profile: {
-                        firstName: \"${first_name}\",
-                        lastName: \"${last_name}\",
-                        youthProfile: {
-                            approverEmail: \"${approver_email}\",
-                        }
-                    }
-                }
-            ) {
-                profile {
-                    firstName
-                    youthProfile {
-                        birthDate
-                    }
-                }
-            }
-        }
-    """
-    )
-    query = t.substitute(
-        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
-        first_name="John",
-        last_name="Doe",
-        approver_email="jane.doe@example.com",
-    )
-
-    assert Profile.objects.count() == 0
-    user_gql_client.execute(query, context=request)
-    # Nested CreateYouthProfile mutation failed and CreateProfile should also fail
-    assert Profile.objects.count() == 0
 
 
 def test_staff_user_can_cancel_youth_membership_on_selected_date(
